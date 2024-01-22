@@ -1,0 +1,3 @@
+configs/influxdb/*
+configs/nymea/data/*
+configs/nymea/cache/*

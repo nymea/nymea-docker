@@ -3,49 +3,33 @@ services:
   nymead:
     build: .
     image: nymead-image
-    container_name: nymea
+    container_name: nymea-docker
     privileged: true
     hostname: nymea-docker
-    networks:
-      nymea-network:
-        ipv4_address: 172.16.238.3
+    restart: on-failure:10
     ports:
-      - "80:80"     # http
-      - "443:443"   # https
       - "2222:2222" # nymea (tcp)
       - "2223:2223" # nymeas (ssl)
       - "2626:2626" # ws debug interface
-      - "4444:4444" # ws
-      - "4445:4445" # wss
       - "1883:1883" # mqtt
     volumes:
       - /run/dbus/system_bus_socket:/run/dbus/system_bus_socket
+      - ./configs/nymea/etc:/etc/nymea/:rw
+      - ./configs/nymea/data:/var/lib/nymea/:rw
+      - ./configs/nymea/cache:/var/cache/nymea/:rw
 
   influxdb:
-    image: influxdb:latest
-    container_name: influxdb-nymea
-    ports:
-      - '8086:8086'
+    image: influxdb:1.8.10
     environment:
-      - INFLUXDB_HTTP_BIND_ADDRESS=172.16.238.2:8086
-      - DOCKER_INFLUXDB_INIT_MODE=setup
-      - DOCKER_INFLUXDB_INIT_USERNAME=nymea
-      - DOCKER_INFLUXDB_INIT_PASSWORD=secret-nymea-password
-      - DOCKER_INFLUXDB_INIT_ORG=nymea
-      - DOCKER_INFLUXDB_INIT_BUCKET=nymea-bucket
       - INFLUXDB_MONITOR_STORE_ENABLED=false
       - INFLUXDB_HTTP_LOG_ENABLED=false
       - INFLUXDB_CONTINUOUS_QUERIES_LOG_ENABLED=false
       - INFLUXDB_CONTINUOUS_QUERIES_QUERY_STATS_ENABLED=false
       - INFLUXDB_DATA_QUERY_LOG_ENABLED=false
-    networks:
-      nymea-network:
-        ipv4_address: 172.16.238.2
-
-networks:
-  nymea-network:
-    ipam:
-      driver: default
-      config:
-        - subnet: "172.16.238.0/24"
-
+    hostname: influxdb
+    restart: on-failure:10
+    ports:
+      - 8086:8086
+    volumes:
+      - ./configs/influxdb/etc:/etc/influxdb/:rw
+      - ./configs/influxdb/data:/var/lib/influxdb:rw
