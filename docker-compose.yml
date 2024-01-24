@@ -2,21 +2,27 @@ version: '3'
 services:
   nymead:
     build: .
-    image: nymead-image
-    container_name: nymea-docker
+    image: nymea
+    container_name: nymead
     privileged: true
-    hostname: nymea-docker
+    hostname: nymea
     restart: on-failure:10
     ports:
+      - "80:80"     # http
+      - "443:443"   # https
       - "2222:2222" # nymea (tcp)
       - "2223:2223" # nymeas (ssl)
       - "2626:2626" # ws debug interface
       - "1883:1883" # mqtt
+      # - "4445:4445" # wss
+      # - "4444:4444" # ws
     volumes:
-      - /run/dbus/system_bus_socket:/run/dbus/system_bus_socket
       - ./configs/nymea/etc:/etc/nymea/:rw
       - ./configs/nymea/data:/var/lib/nymea/:rw
       - ./configs/nymea/cache:/var/cache/nymea/:rw
+      - /etc/localtime:/etc/localtime
+      - /etc/timezone:/etc/timezone
+      - /run/dbus/system_bus_socket:/run/dbus/system_bus_socket
 
   influxdb:
     image: influxdb:1.8.10
