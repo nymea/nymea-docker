@@ -7,6 +7,8 @@ services:
     privileged: true
     hostname: nymea
     restart: on-failure:10
+    networks:
+      - nymea-network
     ports:
       - "80:80"     # http
       - "443:443"   # https
@@ -20,8 +22,8 @@ services:
       - ./configs/nymea/etc:/etc/nymea/:rw
       - ./configs/nymea/data:/var/lib/nymea/:rw
       - ./configs/nymea/cache:/var/cache/nymea/:rw
-      - /etc/localtime:/etc/localtime
-      - /etc/timezone:/etc/timezone
+      - /etc/localtime:/etc/localtime:rw
+      - /etc/timezone:/etc/timezone:rw
       - /run/dbus/system_bus_socket:/run/dbus/system_bus_socket
 
   influxdb:
@@ -34,8 +36,21 @@ services:
       - INFLUXDB_DATA_QUERY_LOG_ENABLED=false
     hostname: influxdb
     restart: on-failure:10
+    networks:
+      - nymea-network
     ports:
       - 8086:8086
     volumes:
       - ./configs/influxdb/etc:/etc/influxdb/:rw
       - ./configs/influxdb/data:/var/lib/influxdb:rw
+
+networks:
+  # Note: we create our own bridge in order to 
+  # make the network monitor work 
+  nymea-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 127.18.0.0/24
+          gateway: 127.18.0.1
+          ip_range: 127.18.0.8/30
