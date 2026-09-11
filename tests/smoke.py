@@ -5,14 +5,18 @@ import json
 from pathlib import Path
 import secrets
 import socket
-import ssl
 import subprocess
+import sys
 import tempfile
 import time
 import uuid
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'container'))
+from nymea_rpc import insecure_tls_context, read_reply  # noqa: E402
+
 IMAGE = 'nymea-local:trixie'
 RUNTIME = '/usr/local/lib/nymea-container/'
+COMPOSE_FILE = Path(__file__).resolve().parent.parent / 'docker-compose.yml'
 
 
 def docker(*args, check=True):
@@ -24,9 +28,7 @@ def docker(*args, check=True):
 
 class Client:
     def __init__(self, port):
-        context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-        context.check_hostname = False
-        context.verify_mode = ssl.CERT_NONE
+        context = insecure_tls_context()
         self.sock = context.wrap_socket(socket.create_connection(('127.0.0.1', port), timeout=10))
         self.certificate = hashlib.sha256(self.sock.getpeercert(binary_form=True)).hexdigest()
         self.stream = self.sock.makefile('rb')
@@ -41,10 +43,11 @@ class Client:
             request['token'] = self.token
         self.sock.sendall(json.dumps(request).encode() + b'\n')
         while True:
-            reply = json.loads(self.stream.readline())
-            if reply.get('id') == self.sequence:
-                assert reply.get('status') == 'success', reply
-                return reply['params']
+            reply = read_reply(self.stream, self.sequence)
+            if reply is None:
+                continue
+            assert reply.get('status') == 'success', reply
+            return reply['params']
 
     def login(self, password):
         result = self.call('JSONRPC.Authenticate', username='smoke-test', password=password, deviceName='smoke-test')
@@ -68,10 +71,25 @@ def wait_healthy(name, previous_restart=None):
     raise RuntimeError('Container did not become healthy: ' + docker('logs', '--tail', '50', name))
 
 
+def compose_service():
+    """Resolve docker-compose.yml so the smoke test can't drift from what Compose actually runs."""
+    output = subprocess.run(['docker', 'compose', '-f', str(COMPOSE_FILE), 'config', '--format', 'json'],
+                             capture_output=True, text=True, check=True)
+    return json.loads(output.stdout)['services']['nymead']
+
+
 def run(name, data):
-    docker('run', '-d', '--name', name, '--network', 'host', '--uts', 'host',
-           '--restart', 'unless-stopped', '--tmpfs', '/run', '--health-interval', '2s',
-           '-v', f'{data}/nymea:/var/lib/nymea', '-v', f'{data}/cache:/var/cache/nymea', IMAGE)
+    service = compose_service()
+    args = ['run', '-d', '--name', name,
+            '--network', service['network_mode'], '--uts', service['uts'],
+            '--restart', service['restart'], '--health-interval', '2s']
+    for tmpfs in service['tmpfs']:
+        args += ['--tmpfs', tmpfs]
+    for volume in service['volumes']:
+        subdir = 'nymea' if volume['target'] == '/var/lib/nymea' else 'cache'
+        args += ['-v', f"{data}/{subdir}:{volume['target']}"]
+    args.append(IMAGE)
+    docker(*args)
     wait_healthy(name)
 
 

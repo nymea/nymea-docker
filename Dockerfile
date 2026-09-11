@@ -21,15 +21,15 @@ COPY packages.txt /usr/share/nymea-container/packages.txt
 RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
        nymead nymea-data nymea-zeroconf-plugin-avahi \
-       nymea-apikeysprovider-plugin-community dbus avahi-daemon supervisor \
+       nymea-apikeysprovider-plugin-community nymea-cli dbus avahi-daemon supervisor \
     && xargs -r -a /usr/share/nymea-container/packages.txt \
        env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    # The package requests NET_ADMIN, outside Docker's default bounding set.
-    # Root already has Docker's NET_RAW; retaining the file caps prevents exec.
+    # Drop nymead's NET_ADMIN file capability (outside Docker's default bounding set) so exec succeeds; see README's Networking section.
     && setcap -r /usr/bin/nymead \
     && dpkg-query -W > /usr/share/nymea-container/installed-packages.txt \
     && rm -rf /var/lib/apt/lists/* \
-    && rm -f /etc/machine-id /var/lib/dbus/machine-id
+    && rm -f /etc/machine-id /var/lib/dbus/machine-id \
+    && rm -f /usr/sbin/policy-rc.d
 
 COPY container/ /usr/local/lib/nymea-container/
 RUN chmod +x /usr/local/lib/nymea-container/*.py /usr/local/lib/nymea-container/entrypoint.sh

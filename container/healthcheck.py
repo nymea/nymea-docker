@@ -1,12 +1,12 @@
 #!/usr/bin/python3
 """Check required processes and the persisted instance's TCP API handshake."""
 import configparser
-import json
 import socket
-import ssl
 import sys
 
 from supervisor import childutils
+
+from nymea_rpc import insecure_tls_context, read_reply
 
 
 def check():
@@ -31,17 +31,13 @@ def check():
             with socket.create_connection((address, section.getint(endpoint + "\\port")), timeout=2) as raw:
                 connection = raw
                 if section.getboolean(endpoint + "\\sslEnabled", fallback=True):
-                    # Local readiness check: nymea generates a self-signed certificate.
-                    context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-                    context.check_hostname = False
-                    context.verify_mode = ssl.CERT_NONE
-                    connection = context.wrap_socket(raw, server_hostname=address)
+                    connection = insecure_tls_context().wrap_socket(raw, server_hostname=address)
                 with connection:
                     connection.sendall(b'{"id":1,"method":"JSONRPC.Hello","params":{}}\n')
                     with connection.makefile("rb") as stream:
                         for _ in range(4):
-                            reply = json.loads(stream.readline(65536))
-                            if reply.get("id") != 1:
+                            reply = read_reply(stream, 1)
+                            if reply is None:
                                 continue
                             params = reply.get("params", {})
                             expected_uuid = config.get("nymead", "uuid")
