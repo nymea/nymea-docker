@@ -11,6 +11,7 @@ services:
     volumes:
       - ${NYMEA_DATA_DIR:-./data}/nymea:/var/lib/nymea
       - ${NYMEA_DATA_DIR:-./data}/cache:/var/cache/nymea
+      - ${NYMEA_DATA_DIR:-./data}/backups:/var/backups
     tmpfs:
       - /run
     logging:

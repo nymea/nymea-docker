@@ -13,6 +13,7 @@ Set these in `.env` (copy `.env.example` first — see the top-level [README](..
 data/
   nymea/     # /var/lib/nymea: settings, users, certificates, scripts, databases
   cache/     # /var/cache/nymea: cached application state
+  backups/   # /var/backups: nymea:app-triggered configuration backups
 ```
 
 Settings are managed through nymea:app. Advanced configuration is in `data/nymea/nymead.conf`; stop the container before editing it and start it afterwards. nymea 1.15 and newer store configuration under `/var/lib/nymea`, not `/etc/nymea`.

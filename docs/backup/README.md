@@ -4,7 +4,7 @@ Stop nymea before copying the entire data folder so databases and configuration 
 
 ```sh
 docker compose stop
-sudo tar -C ./data -czf nymea-backup.tar.gz nymea cache
+sudo tar -C ./data -czf nymea-backup.tar.gz nymea cache backups
 docker compose start
 ```
 

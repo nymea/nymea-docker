@@ -85,8 +85,9 @@ def run(name, data):
             '--restart', service['restart'], '--health-interval', '2s']
     for tmpfs in service['tmpfs']:
         args += ['--tmpfs', tmpfs]
+    subdirs = {'/var/lib/nymea': 'nymea', '/var/cache/nymea': 'cache', '/var/backups': 'backups'}
     for volume in service['volumes']:
-        subdir = 'nymea' if volume['target'] == '/var/lib/nymea' else 'cache'
+        subdir = subdirs[volume['target']]
         args += ['-v', f"{data}/{subdir}:{volume['target']}"]
     args.append(IMAGE)
     docker(*args)
@@ -106,6 +107,7 @@ def main():
     restored = Path(tempfile.mkdtemp(prefix='nymea-restore-'))
     (data / 'nymea').mkdir()
     (data / 'cache').mkdir()
+    (data / 'backups').mkdir()
     with socket.socket() as sock:
         sock.bind(('127.0.0.1', 0))
         port = sock.getsockname()[1]
@@ -143,7 +145,7 @@ def main():
         print('PASS: API user, thing, UUID and certificate survive recreation', flush=True)
         stop(name)
         docker('run', '--rm', '--entrypoint', 'tar', '-v', f'{data}:/backup', IMAGE,
-               '-C', '/backup', '-cf', '/backup/snapshot.tar', 'nymea', 'cache')
+               '-C', '/backup', '-cf', '/backup/snapshot.tar', 'nymea', 'cache', 'backups')
         docker('run', '--rm', '--entrypoint', 'tar', '-v', f'{data}:/backup:ro',
                '-v', f'{restored}:/restore', IMAGE, '-C', '/restore', '-xf', '/backup/snapshot.tar')
         run(name, restored)
