@@ -1,56 +1,20 @@
-version: '3'
 services:
   nymead:
     build: .
-    image: nymea
-    container_name: nymead
-    privileged: true
-    hostname: nymea
-    restart: on-failure:10
-    networks:
-      - nymea-network
-    ports:
-      - "80:80"     # http
-      - "443:443"   # https
-      - "2222:2222" # nymea (tcp)
-      - "2223:2223" # nymeas (ssl)
-      - "2626:2626" # ws debug interface
-      - "1883:1883" # mqtt
-      # - "4445:4445" # wss
-      # - "4444:4444" # ws
-    volumes:
-      - ./configs/nymea/etc:/etc/nymea/:rw
-      - ./configs/nymea/data:/var/lib/nymea/:rw
-      - ./configs/nymea/cache:/var/cache/nymea/:rw
-      - /etc/localtime:/etc/localtime:rw
-      - /etc/timezone:/etc/timezone:rw
-      - /run/dbus/system_bus_socket:/run/dbus/system_bus_socket
-
-  influxdb:
-    image: influxdb:1.8.10
+    image: nymea-local:trixie
+    network_mode: host
+    uts: host
+    restart: unless-stopped
+    stop_grace_period: 45s
     environment:
-      - INFLUXDB_MONITOR_STORE_ENABLED=false
-      - INFLUXDB_HTTP_LOG_ENABLED=false
-      - INFLUXDB_CONTINUOUS_QUERIES_LOG_ENABLED=false
-      - INFLUXDB_CONTINUOUS_QUERIES_QUERY_STATS_ENABLED=false
-      - INFLUXDB_DATA_QUERY_LOG_ENABLED=false
-    hostname: influxdb
-    restart: on-failure:10
-    networks:
-      - nymea-network
-    ports:
-      - 8086:8086
+      TZ: ${TZ:-Europe/Vienna}
     volumes:
-      - ./configs/influxdb/etc:/etc/influxdb/:rw
-      - ./configs/influxdb/data:/var/lib/influxdb:rw
-
-networks:
-  # Note: we create our own bridge in order to 
-  # make the network monitor work 
-  nymea-network:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 127.18.0.0/24
-          gateway: 127.18.0.1
-          ip_range: 127.18.0.8/30
+      - ${NYMEA_DATA_DIR:-./data}/nymea:/var/lib/nymea
+      - ${NYMEA_DATA_DIR:-./data}/cache:/var/cache/nymea
+    tmpfs:
+      - /run
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

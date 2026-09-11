@@ -1,0 +1,8 @@
+# Allowlist: even a custom data folder inside the repository stays out of builds.
+**
+!Dockerfile
+!packages.txt
+!container/
+!container/**
+**/__pycache__
+**/*.pyc

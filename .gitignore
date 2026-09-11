@@ -1,3 +1,5 @@
-configs/influxdb/*
-configs/nymea/data/*
-configs/nymea/cache/*
+/configs/
+/data/
+/.env
+__pycache__/
+*.pyc
