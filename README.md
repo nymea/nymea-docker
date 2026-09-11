@@ -23,6 +23,7 @@ Continue with [Usage](docs/usage/README.md) to connect nymea:app and create your
 | [Networking](docs/networking/README.md) | Ports, LAN discovery, host-networking port mapping |
 | [Zigbee, Z-Wave and Modbus RTU](docs/hardware/README.md) | Passing through USB serial sticks and configuring nymea to use them |
 | [Plugins and updates](docs/plugins/README.md) | Managing `packages.txt`, upgrading the image |
+| [InfluxDB support](docs/influxdb/README.md) | Optional history logging for nymea:app charts |
 | [Backup and restore](docs/backup/README.md) | Backing up and restoring host data |
 | [Health and validation](docs/health/README.md) | Health check behavior, running the smoke test |
 | [Building and publishing](docs/building/README.md) | Building the image and publishing it to Docker Hub |

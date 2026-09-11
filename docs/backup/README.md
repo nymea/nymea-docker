@@ -19,3 +19,5 @@ docker compose up -d --force-recreate --wait --wait-timeout 120
 ```
 
 Keep backups outside the checkout; they include user credentials and private certificates.
+
+If [InfluxDB support](../influxdb/README.md) is set up, also stop that service and include the `influxdb` subfolder in the tar command above.

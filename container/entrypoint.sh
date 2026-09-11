@@ -10,4 +10,6 @@ printf '%s\n' "$TZ" > /etc/timezone
 mkdir -p /run/dbus /run/avahi-daemon /var/lib/nymea /var/cache/nymea
 dbus-uuidgen --ensure=/run/machine-id
 ln -snf /run/machine-id /etc/machine-id
+: "${NYMEAD_EXTRA_ARGS:=}"
+export NYMEAD_EXTRA_ARGS
 exec /usr/bin/supervisord -c /usr/local/lib/nymea-container/supervisord.conf
